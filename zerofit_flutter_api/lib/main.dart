@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'services/api_service.dart';  // ApiService 파일을 임포트합니다.
+import '/services/api_service.dart'; // ApiService 파일을 임포트합니다.
 
 void main() {
   runApp(MyApp());
@@ -25,32 +25,18 @@ class ApiTestScreen extends StatefulWidget {
 
 class _ApiTestScreenState extends State<ApiTestScreen> {
   final ApiService apiService = ApiService(); // ApiService 인스턴스 생성
-  String _response = '';  // 서버 응답을 저장할 변수
+  String _response = ''; // 서버 응답을 저장할 변수
 
   // 서버로부터 데이터 가져오기 (GET 요청)
   Future<void> _fetchData() async {
     try {
-      await apiService.fetchData();
+      String message = await apiService.fetchData(); // 서버 응답 메시지 가져오기
       setState(() {
-        _response = 'Data fetched successfully';
+        _response = message; // 서버 응답을 화면에 표시
       });
     } catch (e) {
       setState(() {
         _response = 'Failed to fetch data: $e';
-      });
-    }
-  }
-
-  // 서버로 데이터 전송하기 (POST 요청)
-  Future<void> _sendData() async {
-    try {
-      await apiService.sendData({'message': 'Hello from Flutter'});
-      setState(() {
-        _response = 'Data sent successfully';
-      });
-    } catch (e) {
-      setState(() {
-        _response = 'Failed to send data: $e';
       });
     }
   }
@@ -68,16 +54,12 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
             Text(
               _response,
               textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _fetchData,
-              child: Text('Fetch Data'),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _sendData,
-              child: Text('Send Data'),
+              child: Text('GET My Image Info'),
             ),
           ],
         ),

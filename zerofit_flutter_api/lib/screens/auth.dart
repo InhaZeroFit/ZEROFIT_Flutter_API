@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
+
   @override
   _SignupScreenState createState() => _SignupScreenState();
 }
@@ -55,7 +57,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Signup', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Signup', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.teal,
@@ -65,7 +67,7 @@ class _SignupScreenState extends State<SignupScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
+            const Center(
               child: Text(
                 'Create Your Account',
                 style: TextStyle(
@@ -75,46 +77,46 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextField(
               controller: _emailController,
               decoration: InputDecoration(
                 labelText: 'Email',
-                prefixIcon: Icon(Icons.email, color: Colors.teal),
+                prefixIcon: const Icon(Icons.email, color: Colors.teal),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
               keyboardType: TextInputType.emailAddress,
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             TextField(
               controller: _passwordController,
               decoration: InputDecoration(
                 labelText: 'Password',
-                prefixIcon: Icon(Icons.lock, color: Colors.teal),
+                prefixIcon: const Icon(Icons.lock, color: Colors.teal),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
               obscureText: true,
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             TextField(
               controller: _phoneNumberController,
               decoration: InputDecoration(
                 labelText: 'Phone Number',
-                prefixIcon: Icon(Icons.phone, color: Colors.teal),
+                prefixIcon: const Icon(Icons.phone, color: Colors.teal),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
               keyboardType: TextInputType.phone,
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
                 labelText: 'Name',
-                prefixIcon: Icon(Icons.person, color: Colors.teal),
+                prefixIcon: const Icon(Icons.person, color: Colors.teal),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             DropdownButtonFormField<String>(
               value: _gender,
               onChanged: (value) {
@@ -130,54 +132,54 @@ class _SignupScreenState extends State<SignupScreen> {
               }).toList(),
               decoration: InputDecoration(
                 labelText: 'Gender',
-                prefixIcon: Icon(Icons.person_outline, color: Colors.teal),
+                prefixIcon: const Icon(Icons.person_outline, color: Colors.teal),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             TextField(
               controller: _nicknameController,
               decoration: InputDecoration(
                 labelText: 'Nickname',
-                prefixIcon: Icon(Icons.tag, color: Colors.teal),
+                prefixIcon: const Icon(Icons.tag, color: Colors.teal),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             TextField(
               controller: _addressController,
               decoration: InputDecoration(
                 labelText: 'Address',
-                prefixIcon: Icon(Icons.home, color: Colors.teal),
+                prefixIcon: const Icon(Icons.home, color: Colors.teal),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             TextField(
               controller: _paymentController,
               decoration: InputDecoration(
                 labelText: 'Payment Info',
-                prefixIcon: Icon(Icons.credit_card, color: Colors.teal),
+                prefixIcon: const Icon(Icons.credit_card, color: Colors.teal),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Center(
               child: ElevatedButton(
                 onPressed: _signup,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
-                child: Text('Signup', style: TextStyle(fontSize: 18)),
+                child: const Text('Signup', style: TextStyle(fontSize: 18)),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Center(
               child: Text(
                 _responseMessage,
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
               ),
             ),
           ],

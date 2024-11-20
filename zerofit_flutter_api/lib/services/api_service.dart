@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const int port = 8005;
+  static const int port = 10103;
   final String base_url = 'http://localhost:$port'; // NodeJS Server
 
   // GET /my-image

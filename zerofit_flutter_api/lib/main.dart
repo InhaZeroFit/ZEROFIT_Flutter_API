@@ -1,23 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/auth.dart'; // 회원가입 창
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'screens/home.dart';
 
-void main() => runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();  // 1번코드
+  await dotenv.load(fileName: ".env");    // 2번코드
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Login',
       theme: ThemeData(primarySwatch: Colors.teal),
-      home: LoginScreen(),
+      home: const LoginScreen(),
     );
   }
 }
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -49,7 +58,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<String> _sendLoginRequest(String email, String password) async {
-    final url = Uri.parse('http://localhost:10103/auth/login');
+    String nodeHost = dotenv.get("NODE_HOST");
+    String nodePort = dotenv.get("NODE_PORT");
+    String nodeUrl = 'http://$nodeHost:$nodePort';
+    final url = Uri.parse('$nodeUrl/auth/login');
     final headers = {'Content-Type': 'application/json'};
     final body = {'email': email, 'password': password};
 
@@ -77,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
+        title: const Text('Login'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -86,47 +98,47 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             TextField(
               controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email)),
+              decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email)),
               keyboardType: TextInputType.emailAddress,
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             TextField(
               controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock)),
+              decoration: const InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock)),
               obscureText: true,
               textInputAction: TextInputAction.done, // 키보드에 'Done' 버튼 추가
               onSubmitted: (value) {
                 _login(); // 엔터를 누르면 로그인 버튼과 동일한 동작 수행
               },
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _login,
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 15),
+                padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: Text('Login', style: TextStyle(fontSize: 18)),
+              child: const Text('Login', style: TextStyle(fontSize: 18)),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             OutlinedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => SignupScreen()),
+                  MaterialPageRoute(builder: (context) => const SignupScreen()),
                 );
               },
               style: OutlinedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 15),
+                padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: Text('Signup', style: TextStyle(fontSize: 18, color: Colors.teal)),
+              child: const Text('Signup', style: TextStyle(fontSize: 18, color: Colors.teal)),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Center(
               child: Text(
                 _responseMessage,
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
               ),
             ),
           ],

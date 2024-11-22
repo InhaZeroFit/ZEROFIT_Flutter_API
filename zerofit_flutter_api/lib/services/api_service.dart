@@ -1,18 +1,31 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const int port = 10103;
-  final String base_url = 'http://localhost:$port'; // NodeJS Server
+  late final String nodeHost;
+  late final String nodePort;
+  late final String nodeUrl;
+  ApiService() {
+    nodeHost = dotenv.get("NODE_HOST");
+    nodePort = dotenv.get("NODE_PORT");
+    nodeUrl = 'http://$nodeHost:$nodePort';
+  }
 
   // GET /my-image
   Future<String> fetchData() async {
-    final response = await http.get(Uri.parse('$base_url/my-image'));
-    if (response.statusCode == 200) {
-      var data = json.decode(response.body); // Parsing in JSON foramt
-      return data['message']; // return 'message'
-    } else {
-      throw Exception('Failed to load data');
+    try {
+      final response = await http.get(Uri.parse('$nodeUrl/my-image'));
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        return data['message'];
+      } else {
+        final error = json.decode(response.body);
+        throw Exception('Failed to load data: ${error['message']}');
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+      return 'Error fetching data';
     }
   }
 
@@ -28,7 +41,7 @@ class ApiService {
     String? address,
     String? payment,
   }) async {
-    final url = Uri.parse('$base_url/auth/join');
+    final url = Uri.parse('$nodeUrl/auth/join');
     final headers = {'Content-Type': 'application/json'};
     final body = jsonEncode({
       'email': email,
@@ -44,7 +57,6 @@ class ApiService {
 
     try {
       final response = await http.post(url, headers: headers, body: body);
-
       if (response.statusCode == 200) {
         return 'Signup successful!';
       } else {

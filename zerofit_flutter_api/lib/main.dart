@@ -1,8 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:zerofit_flutter_api/services/api_service.dart';
 import 'screens/auth.dart'; // 회원가입 창
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'screens/home.dart';
 
 void main() async {
@@ -34,6 +35,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final ApiService _apiService = ApiService();
   String _responseMessage = '';
 
   Future<void> _login() async {
@@ -48,43 +50,26 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     // Node.js 서버로 로그인 요청
-    final response = await _sendLoginRequest(email, password);
+    final response = await _apiService.sendLoginRequest(email, password);
 
     _passwordController.clear();
 
     setState(() {
-      _responseMessage = response;
-    });
-  }
-
-  Future<String> _sendLoginRequest(String email, String password) async {
-    String nodeHost = dotenv.get("NODE_HOST");
-    String nodePort = dotenv.get("NODE_PORT");
-    String nodeUrl = 'http://$nodeHost:$nodePort';
-    final url = Uri.parse('$nodeUrl/auth/login');
-    final headers = {'Content-Type': 'application/json'};
-    final body = {'email': email, 'password': password};
-
-    try {
-      final response = await http.post(url, headers: headers, body: jsonEncode(body));
-      if (response.statusCode == 200) {
+      if (response != null && response.statusCode == 200) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => HomeScreen(email: email), // 이메일 전달
+            builder: (context) => HomeScreen(email: email),
           ),
         );
-
-        return 'Login successful!';
-      } else {
+      } else if (response != null) {
         final responseBody = jsonDecode(response.body);
-        return 'Error: ${responseBody['message']}';
+        _responseMessage = 'Error: ${responseBody['message']}';
+      } else {
+        _responseMessage = 'Error: Could not connect to server';
       }
-    } catch (e) {
-      return 'Error: Could not connect to server';
-    }
+    });
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

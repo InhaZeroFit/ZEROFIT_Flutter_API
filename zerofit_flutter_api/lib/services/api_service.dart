@@ -2,6 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
+import '../screens/home.dart'; // 홈 화면 임포트
+
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   late final String nodeHost;
@@ -12,7 +16,6 @@ class ApiService {
     nodePort = dotenv.get("NODE_PORT");
     nodeUrl = 'http://$nodeHost:$nodePort';
   }
-
   // GET /my-image
   Future<String> fetchData() async {
     try {
@@ -68,6 +71,20 @@ class ApiService {
       return 'Error: Could not connect to server';
     }
   }
+  // POST /auth/login
+  Future<http.Response?> sendLoginRequest(String email, String password) async {
+    final url = Uri.parse('$nodeUrl/auth/login');
+    final headers = {'Content-Type': 'application/json'};
+    final body = {'email': email, 'password': password};
+    try {
+      final response = await http.post(url, headers: headers, body: jsonEncode(body));
+      return response;
+    } catch (e) {
+      print('Error: Could not connect to server');
+      return null;
+    }
+  }
+
 
   // POST /clothes/upload_image
   Future<Map<String, dynamic>?> uploadImage({
@@ -82,7 +99,18 @@ class ApiService {
         'clothes_id': clothesId,
         'image': base64Image,
       });
-
+      /*
+      final body = jsonEncode({
+        'user_id' : userId,
+        'base64Image' : base64Image,
+        'name' : name,
+        'clothes_type' : clothesType,
+        'score' : score,
+        'size' : size,
+        'brand' : brand,
+        'memo' : memo,
+      });
+      */
       // 요청 전송
       final response = await http.post(
         Uri.parse('$nodeUrl/clothes/upload_image'),

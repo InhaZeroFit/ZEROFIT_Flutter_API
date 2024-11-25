@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -64,8 +65,13 @@ class ApiService {
     try {
       final response = await http.post(url, headers: headers, body: jsonEncode(body));
       final responseBody = jsonDecode(response.body);
+
+      // JWT 토큰 저장
+      if (responseBody['token'] != null) {
+        await _storage.write(key: 'jwt_token', value: responseBody['token']);
+      }
+
       if (response.statusCode == 200) {
-        print(responseBody['message']);
         return {
           'status': true, // 요청 성공 여부
           'message': responseBody['message'], // 메시지
@@ -86,38 +92,54 @@ class ApiService {
 
 
   // POST /clothes/upload_image
-  Future<Map<String, dynamic>?> uploadImage({
+  Future<bool> uploadImage({
     required File image,
-    required int clothesId,
+    required String clothingName,
+    required int rating,
+    required String clothingType,
+    required String clothingStyle,
+    required String memo,
+
   }) async {
     try {
+      // JWT 토큰 읽기
+      final token = await _storage.read(key: 'jwt_token');
+
+      if (token == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // JWT에서 이메일 추출 (옵션)
+      final userId = await _getUserIdFromJwt(token);
+
       // 이미지를 Base64로 인코딩
       String base64Image = base64Encode(await image.readAsBytesSync());
+
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token', // JWT 인증 헤더 추가
+      };
       // JSON 데이터 생성
       final body = jsonEncode({
-        'clothes_id': clothesId,
-        'image': base64Image,
+        'userId' : userId,
+        'base64Image': base64Image,
+        'clothingName' : clothingName,
+        'rating' : rating,
+        'clothingType' : clothingType,
+        'clothingStyle' : clothingStyle,
+        'imageMemo' : memo,
       });
-      /*
-      final body = jsonEncode({
-        'user_id' : userId,
-        'base64Image' : base64Image,
-        'name' : name,
-        'clothes_type' : clothesType,
-        'score' : score,
-        'size' : size,
-        'brand' : brand,
-        'memo' : memo,
-      });
-      */
+
       // 요청 전송
       final response = await http.post(
         Uri.parse('$nodeUrl/clothes/upload_image'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: body,
       );
+      final responseBody = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        return jsonDecode(response.body); // 성공 시 JSON 데이터 반환
+        print("${responseBody['message']}");
+        return true;
       } else {
         // 실패한 경우 응답 로그
         print("Failed to upload. Status code: ${response.statusCode}");
@@ -127,12 +149,37 @@ class ApiService {
         } catch (e) {
           print("Error decoding response: $e");
         }
-        return null;
+        return false;
       }
     } catch (e) {
       // 네트워크 오류 또는 기타 에러 처리
       print("Error occurred while uploading: $e");
-      return null;
+      return false;
+    }
+  }
+
+// JWT 디코딩 및 유저 ID 추출
+  Future <int> _getUserIdFromJwt(String token) async {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        throw Exception('Invalid JWT');
+      }
+
+      // JWT의 payload 부분 디코딩
+      final payload = jsonDecode(
+        utf8.decode(
+          base64Url.decode(
+            base64Url.normalize(parts[1]),
+          ),
+        ),
+      );
+
+      // 'user_id' 필드 반환
+      return payload['user_id'];
+    } catch (e) {
+      print('Error decoding JWT: $e');
+      return 0;
     }
   }
 }

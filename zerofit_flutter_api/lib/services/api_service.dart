@@ -96,8 +96,8 @@ class ApiService {
     required File image,
     required String clothingName,
     required int rating,
-    required String clothingType,
-    required String clothingStyle,
+    required List<String> clothingTypes, // 다중 선택
+    required List<String> clothingStyles, // 다중 선택
     required String memo,
 
   }) async {
@@ -125,8 +125,8 @@ class ApiService {
         'base64Image': base64Image,
         'clothingName' : clothingName,
         'rating' : rating,
-        'clothingType' : clothingType,
-        'clothingStyle' : clothingStyle,
+        'clothingType' : clothingTypes,
+        'clothingStyle' : clothingStyles,
         'imageMemo' : memo,
       });
 

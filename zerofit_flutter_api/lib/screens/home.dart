@@ -31,16 +31,16 @@ class _HomeScreenState extends State<HomeScreen> {
     required File image,
     required String clothingName,
     required int rating,
-    required String clothingType,
-    required String clothingStyle,
+    required List<String> clothingTypes, // 다중 선택
+    required List<String> clothingStyles, // 다중 선택
     required String memo,
   }) async {
     final response = await _apiService.uploadImage(
       image: image,
       clothingName: clothingName,
       rating: rating,
-      clothingType: clothingType,
-      clothingStyle: clothingStyle,
+      clothingTypes: clothingTypes,
+      clothingStyles: clothingStyles,
       memo: memo,
     );
 
@@ -144,8 +144,8 @@ class ClothesRegistrationScreen extends StatefulWidget {
   required File image,
   required String clothingName,
   required int rating,
-  required String clothingType,
-  required String clothingStyle,
+  required List<String> clothingTypes, // 다중 선택
+  required List<String> clothingStyles, // 다중 선택
   required String memo,
   }) onSubmit;
 
@@ -166,8 +166,8 @@ class _ClothesRegistrationScreenState
   TextEditingController();
   final TextEditingController _memoController = TextEditingController();
 
-  String selectedClothingType = '';
-  String selectedClothingStyle = '';
+  List<String> selectedClothingTypes = [];
+  List<String> selectedClothingStyles = [];
   int selectedRating = 0;
 
   void _validateAndSubmit() {
@@ -184,15 +184,15 @@ class _ClothesRegistrationScreenState
         );
         return;
       }
-      if (selectedClothingType.isEmpty) {
+      if (selectedClothingTypes.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please select a clothing type")),
+          const SnackBar(content: Text("Please select at least one type")),
         );
         return;
       }
-      if (selectedClothingStyle.isEmpty) {
+      if (selectedClothingStyles.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please select a clothing style")),
+          const SnackBar(content: Text("Please select at least one style")),
         );
         return;
       }
@@ -202,17 +202,26 @@ class _ClothesRegistrationScreenState
       image: widget.userImage,
       clothingName: _clothingNameController.text,
       rating: selectedRating,
-      clothingType: selectedClothingType,
-      clothingStyle: selectedClothingStyle,
+      clothingTypes: selectedClothingTypes,
+      clothingStyles: selectedClothingStyles,
       memo: _memoController.text,
     );
 
     Navigator.pop(context);
   }
 
-  Widget _buildSelectableButton(String label, bool isSelected, Function onTap) {
+  Widget _buildMultiSelectableButton(String label, List<String> list) {
+    final isSelected = list.contains(label);
     return GestureDetector(
-      onTap: () => onTap(),
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            list.remove(label);
+          } else {
+            list.add(label);
+          }
+        });
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         margin: const EdgeInsets.only(right: 8, bottom: 8),
@@ -282,26 +291,14 @@ class _ClothesRegistrationScreenState
             Text("Clothing Type:"),
             Wrap(
               children: ['상의', '하의', '외투', '원피스', '액세서리']
-                  .map((type) => _buildSelectableButton(
-                type,
-                selectedClothingType == type,
-                    () => setState(() {
-                  selectedClothingType = type;
-                }),
-              ))
+                  .map((type) => _buildMultiSelectableButton(type, selectedClothingTypes))
                   .toList(),
             ),
             const SizedBox(height: 12),
             Text("Clothing Style:"),
             Wrap(
               children: ['캐주얼', '빈티지', '포멀', '미니멀']
-                  .map((style) => _buildSelectableButton(
-                style,
-                selectedClothingStyle == style,
-                    () => setState(() {
-                  selectedClothingStyle = style;
-                }),
-              ))
+                  .map((style) => _buildMultiSelectableButton(style, selectedClothingStyles))
                   .toList(),
             ),
             const SizedBox(height: 12),

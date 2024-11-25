@@ -55,19 +55,15 @@ class _LoginScreenState extends State<LoginScreen> {
     _passwordController.clear();
 
     setState(() {
-      if (response != null && response.statusCode == 200) {
+      if (response['status']) {
         Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomeScreen(email: email),
-          ),
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomeScreen(email: email),
+            )
         );
-      } else if (response != null) {
-        final responseBody = jsonDecode(response.body);
-        _responseMessage = 'Error: ${responseBody['message']}';
-      } else {
-        _responseMessage = 'Error: Could not connect to server';
       }
+      _responseMessage = response['message'];
     });
   }
   @override

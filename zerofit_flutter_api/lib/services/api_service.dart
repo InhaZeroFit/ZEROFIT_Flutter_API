@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   late final String nodeUrl;
+  final _storage = const FlutterSecureStorage();
 
   ApiService() {
     nodeUrl = 'http://${dotenv.get("NODE_HOST")}:${dotenv.get("NODE_PORT")}';
@@ -39,10 +40,16 @@ class ApiService {
 
     try {
       final response = await http.post(url, headers: headers, body: body);
+      final responseBody = jsonDecode(response.body);
       if (response.statusCode == 200) {
+
+        // JWT 토큰 저장
+        if (responseBody['token'] != null) {
+          await _storage.write(key: 'jwt_token', value: responseBody['token']);
+        }
+        print(responseBody['token']);
         return 'Signup successful!';
       } else {
-        final responseBody = jsonDecode(response.body);
         return 'Successfully: ${responseBody['message']}';
       }
     } catch (e) {
@@ -50,16 +57,30 @@ class ApiService {
     }
   }
   // POST /auth/login
-  Future<http.Response?> sendLoginRequest(String email, String password) async {
+  Future<Map<String, dynamic>> sendLoginRequest(String email, String password) async {
     final url = Uri.parse('$nodeUrl/auth/login');
     final headers = {'Content-Type': 'application/json'};
     final body = {'email': email, 'password': password};
     try {
       final response = await http.post(url, headers: headers, body: jsonEncode(body));
-      return response;
+      final responseBody = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        print(responseBody['message']);
+        return {
+          'status': true, // 요청 성공 여부
+          'message': responseBody['message'], // 메시지
+        };
+      }
+      return {
+        'status': false, // 요청 성공 여부
+        'message': 'Error: ${responseBody['message']}' // 메시지
+      };
     } catch (e) {
       print('Error: Could not connect to server');
-      return null;
+      return {
+        'status': false, // 요청 성공 여부
+        'message': 'Error: Could not connect to server', // 메시지
+      };
     }
   }
 

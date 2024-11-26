@@ -15,16 +15,70 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ApiService _apiService = ApiService();
   File? _selectedImage; // 선택된 이미지 파일
+  Offset? _includePoint; // 초록색 마스킹 좌표
+  Offset? _excludePoint; // 빨간색 마스킹 좌표
   String _uploadStatus = ''; // 업로드 상태 메시지
 
   Future<void> _pickImage() async {
-    final pickedFile =
-    await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _selectedImage = File(pickedFile.path);
       });
     }
+  }
+
+  void _navigateToMaskingScreen() {
+    if (_selectedImage == null) {
+      setState(() {
+        _uploadStatus = 'Please select an image first.';
+      });
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImageMaskingScreen(
+          image: _selectedImage!,
+          onSubmit: ({required Offset includePoint, required Offset excludePoint}) {
+            setState(() {
+              _includePoint = includePoint;
+              _excludePoint = excludePoint;
+            });
+
+            print("Include Point: $_includePoint");
+            print("Exclude Point: $_excludePoint");
+
+            // 화면 전환을 약간 지연
+            Future.delayed(Duration(milliseconds: 100), () {
+              _navigateToClothesRegistration();
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _navigateToClothesRegistration() {
+    if (_includePoint == null || _excludePoint == null) {
+      print("Error: Masking points are null. Cannot proceed.");
+      return;
+    }
+
+    print("Navigating to ClothesRegistrationScreen");
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ClothesRegistrationScreen(
+          userImage: _selectedImage!,
+          includePoint: _includePoint!,
+          excludePoint: _excludePoint!,
+          onSubmit: _uploadImage,
+        ),
+      ),
+    );
+    print("Navigation to ClothesRegistrationScreen completed");
   }
 
   Future<void> _uploadImage({
@@ -34,6 +88,8 @@ class _HomeScreenState extends State<HomeScreen> {
     required List<String> clothingTypes, // 다중 선택
     required List<String> clothingStyles, // 다중 선택
     required String memo,
+    required Offset includePoint,
+    required Offset excludePoint,
   }) async {
     final response = await _apiService.uploadImage(
       image: image,
@@ -42,6 +98,8 @@ class _HomeScreenState extends State<HomeScreen> {
       clothingTypes: clothingTypes,
       clothingStyles: clothingStyles,
       memo: memo,
+      includePoint: includePoint,
+      excludePoint: excludePoint,
     );
 
     setState(() {
@@ -53,30 +111,11 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _navigateToClothesRegistration() {
-    if (_selectedImage == null) {
-      setState(() {
-        _uploadStatus = 'Please select an image first.';
-      });
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ClothesRegistrationScreen(
-          userImage: _selectedImage!,
-          onSubmit: _uploadImage,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: true, // Back 버튼 비활성화
+        automaticallyImplyLeading: true,
         title: const Text('Home'),
       ),
       body: Padding(
@@ -113,14 +152,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 10),
             ElevatedButton(
-              onPressed: _navigateToClothesRegistration,
+              onPressed: _navigateToMaskingScreen,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: const Text('Register Clothes', style: TextStyle(fontSize: 18)),
+              child: const Text('Upload Image', style: TextStyle(fontSize: 18)),
             ),
             const SizedBox(height: 20),
             Center(
@@ -136,22 +175,162 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+class ImageMaskingScreen extends StatefulWidget {
+  final File image;
+  final Function({
+  required Offset includePoint,
+  required Offset excludePoint,
+  }) onSubmit;
 
-// ClothesRegistrationScreen
+  const ImageMaskingScreen({
+    super.key,
+    required this.image,
+    required this.onSubmit,
+  });
+
+  @override
+  State<ImageMaskingScreen> createState() => _ImageMaskingScreenState();
+}
+
+class _ImageMaskingScreenState extends State<ImageMaskingScreen> {
+  Offset? _includePoint;
+  Offset? _excludePoint;
+
+  @override
+  void initState() {
+    super.initState();
+    // 초기 상태: 좌표는 null
+  }
+
+  void _onImageTap(TapUpDetails details) {
+    final RenderBox box = context.findRenderObject() as RenderBox;
+    final Offset localOffset = box.globalToLocal(details.localPosition);
+
+    setState(() {
+      if (_includePoint == null) {
+        _includePoint = localOffset;
+      } else if (_excludePoint == null) {
+        _excludePoint = localOffset;
+      }
+    });
+  }
+
+  void _resetPoints() {
+    setState(() {
+      _includePoint = null;
+      _excludePoint = null;
+    });
+  }
+
+  void _submit() {
+    if (_includePoint == null || _excludePoint == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select all required points")),
+      );
+      return;
+    }
+
+    widget.onSubmit(
+      includePoint: _includePoint!,
+      excludePoint: _excludePoint!,
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Masking points saved successfully!")),
+    );
+
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Select Masking Points'),
+        centerTitle: true,
+      ),
+      body: Stack(
+        children: [
+          GestureDetector(
+            onTapUp: _onImageTap,
+            child: Stack(
+              children: [
+                Image.file(
+                  widget.image,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+                if (_includePoint != null)
+                  Positioned(
+                    left: _includePoint!.dx,
+                    top: _includePoint!.dy,
+                    child: const Icon(Icons.circle, color: Colors.green, size: 12),
+                  ),
+                if (_excludePoint != null)
+                  Positioned(
+                    left: _excludePoint!.dx,
+                    top: _excludePoint!.dy,
+                    child: const Icon(Icons.circle, color: Colors.red, size: 12),
+                  ),
+              ],
+            ),
+          ),
+          Positioned(
+            bottom: 80,
+            left: 16,
+            right: 16,
+            child: ElevatedButton(
+              onPressed: _resetPoints,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Reset Points', style: TextStyle(fontSize: 18)),
+            ),
+          ),
+          Positioned(
+            bottom: 16,
+            left: 16,
+            right: 16,
+            child: ElevatedButton(
+              onPressed: _submit,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Save Points', style: TextStyle(fontSize: 18)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 class ClothesRegistrationScreen extends StatefulWidget {
   final File userImage;
+  final Offset includePoint;
+  final Offset excludePoint;
   final Function({
   required File image,
   required String clothingName,
   required int rating,
-  required List<String> clothingTypes, // 다중 선택
-  required List<String> clothingStyles, // 다중 선택
+  required List<String> clothingTypes,
+  required List<String> clothingStyles,
   required String memo,
+  required Offset includePoint,
+  required Offset excludePoint,
   }) onSubmit;
 
   const ClothesRegistrationScreen({
     super.key,
     required this.userImage,
+    required this.includePoint,
+    required this.excludePoint,
     required this.onSubmit,
   });
 
@@ -162,8 +341,7 @@ class ClothesRegistrationScreen extends StatefulWidget {
 
 class _ClothesRegistrationScreenState
     extends State<ClothesRegistrationScreen> {
-  final TextEditingController _clothingNameController =
-  TextEditingController();
+  final TextEditingController _clothingNameController = TextEditingController();
   final TextEditingController _memoController = TextEditingController();
 
   List<String> selectedClothingTypes = [];
@@ -171,32 +349,30 @@ class _ClothesRegistrationScreenState
   int selectedRating = 0;
 
   void _validateAndSubmit() {
-    setState(() {
-      if (_clothingNameController.text.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Clothing name cannot be empty")),
-        );
-        return;
-      }
-      if (selectedRating == 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please select a rating")),
-        );
-        return;
-      }
-      if (selectedClothingTypes.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please select at least one type")),
-        );
-        return;
-      }
-      if (selectedClothingStyles.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please select at least one style")),
-        );
-        return;
-      }
-    });
+    if (_clothingNameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Clothing name cannot be empty")),
+      );
+      return;
+    }
+    if (selectedRating == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a rating")),
+      );
+      return;
+    }
+    if (selectedClothingTypes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select at least one type")),
+      );
+      return;
+    }
+    if (selectedClothingStyles.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select at least one style")),
+      );
+      return;
+    }
 
     widget.onSubmit(
       image: widget.userImage,
@@ -205,6 +381,12 @@ class _ClothesRegistrationScreenState
       clothingTypes: selectedClothingTypes,
       clothingStyles: selectedClothingStyles,
       memo: _memoController.text,
+      includePoint: widget.includePoint,
+      excludePoint: widget.excludePoint,
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Upload successful!")),
     );
 
     Navigator.pop(context);
@@ -243,77 +425,91 @@ class _ClothesRegistrationScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: const Icon(Icons.close),
-        ),
-        title: const Text('옷 등록'),
+        title: const Text('Clothes Registration'),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Image.file(
-                widget.userImage,
-                height: 150,
-                width: 150,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _clothingNameController,
-              decoration: const InputDecoration(hintText: '옷 이름을 입력하세요'),
-            ),
-            const SizedBox(height: 12),
-            Text("Rating:"),
-            Row(
-              children: List.generate(5, (index) {
-                return IconButton(
-                  icon: Icon(
-                    index < selectedRating ? Icons.star : Icons.star_border,
-                    color: Colors.orange,
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AspectRatio(
+                  aspectRatio: 4 / 3, // 원하는 비율로 조정 가능
+                  child: Image.file(
+                    widget.userImage,
+                    width: double.infinity,
+                    fit: BoxFit.contain, // 이미지 전체가 보이도록 설정
                   ),
-                  onPressed: () {
-                    setState(() {
-                      selectedRating = index + 1;
-                    });
-                  },
-                );
-              }),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _clothingNameController,
+                  decoration: const InputDecoration(
+                      hintText: 'Enter clothing name'),
+                ),
+                const SizedBox(height: 12),
+                Text("Rating:"),
+                Row(
+                  children: List.generate(5, (index) {
+                    return IconButton(
+                      icon: Icon(
+                        index < selectedRating ? Icons.star : Icons.star_border,
+                        color: Colors.orange,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          selectedRating = index + 1;
+                        });
+                      },
+                    );
+                  }),
+                ),
+                const SizedBox(height: 12),
+                Text("Clothing Type:"),
+                Wrap(
+                  children: ['상의', '하의', '외투', '원피스', '액세서리']
+                      .map((type) =>
+                      _buildMultiSelectableButton(type, selectedClothingTypes))
+                      .toList(),
+                ),
+                const SizedBox(height: 12),
+                Text("Clothing Style:"),
+                Wrap(
+                  children: ['캐주얼', '빈티지', '포멀', '미니멀']
+                      .map((style) =>
+                      _buildMultiSelectableButton(
+                          style, selectedClothingStyles))
+                      .toList(),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _memoController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                      hintText: 'Enter additional notes'),
+                ),
+                const SizedBox(height: 80), // 버튼 하단 여백
+              ],
             ),
-            const SizedBox(height: 12),
-            Text("Clothing Type:"),
-            Wrap(
-              children: ['상의', '하의', '외투', '원피스', '액세서리']
-                  .map((type) => _buildMultiSelectableButton(type, selectedClothingTypes))
-                  .toList(),
-            ),
-            const SizedBox(height: 12),
-            Text("Clothing Style:"),
-            Wrap(
-              children: ['캐주얼', '빈티지', '포멀', '미니멀']
-                  .map((style) => _buildMultiSelectableButton(style, selectedClothingStyles))
-                  .toList(),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _memoController,
-              maxLines: 3,
-              decoration: const InputDecoration(hintText: '추가 메모를 입력하세요'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
+          ),
+          Positioned(
+            bottom: 16,
+            left: 16,
+            right: 16,
+            child: ElevatedButton(
               onPressed: _validateAndSubmit,
-              child: const Text('등록하기'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Upload', style: TextStyle(fontSize: 18)),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

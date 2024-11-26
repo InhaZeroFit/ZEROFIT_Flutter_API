@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -99,7 +99,8 @@ class ApiService {
     required List<String> clothingTypes, // 다중 선택
     required List<String> clothingStyles, // 다중 선택
     required String memo,
-
+    required Offset includePoint, // 추가된 포함 좌표
+    required Offset excludePoint, // 추가된 제외 좌표
   }) async {
     try {
       // JWT 토큰 읽기
@@ -128,6 +129,8 @@ class ApiService {
         'clothingType' : clothingTypes,
         'clothingStyle' : clothingStyles,
         'imageMemo' : memo,
+        'includePoint': {'x': includePoint.dx, 'y': includePoint.dy}, // 포함 좌표
+        'excludePoint': {'x': excludePoint.dx, 'y': excludePoint.dy}, // 제외 좌표
       });
 
       // 요청 전송

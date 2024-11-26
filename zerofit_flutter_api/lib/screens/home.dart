@@ -385,10 +385,6 @@ class _ClothesRegistrationScreenState
       excludePoint: widget.excludePoint,
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Upload successful!")),
-    );
-
     Navigator.pop(context);
   }
 

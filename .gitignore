@@ -1,0 +1,32 @@
+# Flutter 관련 빌드 디렉터리
+build/
+.flutter/
+.dart_tool/
+
+# iOS 관련 파일
+ios/Pods/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+
+# Android 관련 파일
+android/.gradle/
+android/app/*.iml
+
+# Dart 패키지 캐시
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# 개인 환경 설정 파일
+.vscode/
+.idea/
+*.iml
+
+# macOS 및 기타 시스템 파일
+.DS_Store
+
+# Github 관련
+README.md8
+
+# 환경변수
+.env

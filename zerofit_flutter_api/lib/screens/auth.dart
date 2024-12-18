@@ -30,7 +30,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final address = _addressController.text.trim();
     final payment = _paymentController.text.trim();
 
-    if (email.isEmpty || password.isEmpty || phoneNumber.isEmpty || name.isEmpty) {
+    if (email.isEmpty || password.isEmpty || address.isEmpty) {
       setState(() {
         _responseMessage = 'Required fields cannot be empty!';
       });
